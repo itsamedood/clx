@@ -5,6 +5,7 @@ class File:
   """
   Represents a file that can be read from and (possibly) written to.
   """
+
   def __init__(self, _path):
     _path = abspath(_path)
     self.path = _path

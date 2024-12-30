@@ -20,6 +20,8 @@ class Editor:
       init_pair(1, COLOR_RED, COLOR_BLACK)
 
   def draw(self, _stdscr: window, _path: str) -> None:
+    """ Draws the editor. """
+
     _stdscr.clear()
 
     height, width = _stdscr.getmaxyx()
@@ -103,6 +105,8 @@ class Editor:
     _stdscr.clear()
 
   def clx_help(self, _stdscr: window) -> None:  # 'h'.
+    """ Help menu. """
+
     height, width = _stdscr.getmaxyx()
     win_height, win_width = 10, 54
     start_y = (height - win_height) // 2
@@ -123,6 +127,8 @@ class Editor:
     _stdscr.clear()
 
   def edit(self, _stdscr: window) -> None:  # 'e'.
+    """ Allows you to edit the byte at the cursor position. """
+
     height, width = _stdscr.getmaxyx()
     win_height, win_width = 3, 20
     start_y = (height - win_height) // 2
@@ -143,12 +149,16 @@ class Editor:
     _stdscr.clear()
 
   def save(self, _stdscr: window) -> None:  # 'w'.
+    """ Writes content back to the file. """
+
     try:
       self.file.write(bytes(self.content))
       self.success(_stdscr, f"Wrote {len(self.content)} bytes!")
     except: self.error(_stdscr, "Failed to save! This may be a read-only file.")
 
   def jump_to_address(self, _stdscr: window) -> None:  # 'g'.
+    """ Jumps to a specific address in the file (ex. 1A). """
+
     height, width = _stdscr.getmaxyx()
     win_height, win_width = 3, 80
     start_y = (height - win_height) // 2
@@ -167,9 +177,16 @@ class Editor:
     try:
       self.cursor_pos = int(address, 16)
       if self.cursor_pos >= len(self.content): self.cursor_pos = len(self.content) - 1
-    except ValueError: self.error(_stdscr, "Invalid address!")
+
+      # Adjust the visible window.
+      if self.cursor_pos < self.start_line * self.bytes_per_line:self.start_line = self.cursor_pos // self.bytes_per_line
+      elif self.cursor_pos >= (self.start_line + _stdscr.getmaxyx()[0] - 2) * self.bytes_per_line: self.start_line = self.cursor_pos // self.bytes_per_line - (_stdscr.getmaxyx()[0] - 3)
+    except ValueError:
+      self.error(_stdscr, "Invalid address!")
 
   def add_bytes(self, _stdscr: window) -> None:  # 'a'.
+    """ Appends bytes to the end of the file. """
+
     height, width = _stdscr.getmaxyx()
     win_height, win_width = 3, 50
     start_y = (height - win_height) // 2
@@ -192,13 +209,43 @@ class Editor:
       self.error(_stdscr, "Invalid number!")
     _stdscr.clear()
 
+  def insert_bytes(self, _stdscr: window) -> None:  # 'i'.
+    """ Inserts bytes at the cursor position. """
+
+    height, width = _stdscr.getmaxyx()
+    win_height, win_width = 3, 50
+    start_y = (height - win_height) // 2
+    start_x = (width - win_width) // 2
+
+    insert_win = _stdscr.subwin(win_height, win_width, start_y, start_x)
+    insert_win.clear()
+    insert_win.border()
+    insert_win.addstr(1, 1, "Number of bytes: ")
+    insert_win.refresh()
+    echo()
+    num_bytes = insert_win.getstr(1, 22, 8).decode("utf-8")
+    noecho()
+    _stdscr.clear()
+
+    try:
+      num_bytes = int(num_bytes)
+      self.content[self.cursor_pos:self.cursor_pos] = bytearray(num_bytes)
+    except ValueError:
+      self.error(_stdscr, "Invalid number!")
+    _stdscr.clear()
+
   def remove_byte(self, _stdscr: window) -> None:
+    """ Deletes the byte at the cursor position, and shifts the cursor back 1. """
+
     if len(self.content) > 0:
       del self.content[self.cursor_pos]
       self.cursor_pos = max(0, self.cursor_pos - 1)
+
     _stdscr.clear()
 
   def main(self, _stdscr: window, _path: str) -> None:
+    """ Main loop, handles calling all other methods and user input. """
+
     curs_set(1)  # Show cursor.
     _stdscr.keypad(True)
 
@@ -206,6 +253,7 @@ class Editor:
       self.draw(_stdscr, self.file.path)
 
       # Handle user input.
+      # I tried to use match-case but all I got was "called match pattern must be a class".
       key = _stdscr.getch()
       if key == ord("q"): break
       if key == ord("h"): self.clx_help(_stdscr)
@@ -213,6 +261,7 @@ class Editor:
       if key == ord("w"): self.save(_stdscr)
       if key == ord("g"): self.jump_to_address(_stdscr)
       if key == ord("a"): self.add_bytes(_stdscr)
+      if key == ord("i"): self.insert_bytes(_stdscr)
       if key == ord("r"): self.remove_byte(_stdscr)
       if key == KEY_DOWN: self.cursor_pos += self.bytes_per_line
       if key == KEY_UP: self.cursor_pos -= self.bytes_per_line
@@ -224,4 +273,4 @@ class Editor:
 
       # Adjust the visible window.
       if self.cursor_pos < self.start_line * self.bytes_per_line: self.start_line -= 1
-      elif self.cursor_pos >= (self.start_line + _stdscr.getmaxyx()[0] - 2) * self.bytes_per_line: self.start_line += 1
+      elif self.cursor_pos >= (self.start_line + _stdscr.getmaxyx()[0] - 3) * self.bytes_per_line: self.start_line += 1
