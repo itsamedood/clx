@@ -1,0 +1,4 @@
+/bin
+/build
+*.spec
+*.DS_Store
