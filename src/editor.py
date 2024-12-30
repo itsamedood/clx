@@ -1,4 +1,5 @@
-from curses import curs_set, echo, noecho, window, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, color_pair, init_pair, A_BOLD, has_colors, start_color, COLOR_BLACK, COLOR_RED, initscr
+from curses import curs_set, echo, initscr, noecho, window, color_pair, init_pair, has_colors, start_color
+from curses import KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, A_BOLD, COLOR_GREEN, COLOR_BLACK
 from file import File
 
 
@@ -14,10 +15,25 @@ class Editor:
     self.start_line = 0
     self.bytes_per_line = 16
 
+    self.help_message = [  # Empty strings serve as line breaks.
+      "CLX Help",
+      "",
+      "q: Quit",
+      "e: Edit byte",
+      "w: Save",
+      "g: Jump to address",
+      "a: Add bytes",
+      "i: Insert bytes",
+      "r: Remove selected byte",
+      "",
+      "Use arrow keys to navigate.",
+    ]
+
     initscr()
     if has_colors():  # Enable colors if supported.
       start_color()
-      init_pair(1, COLOR_RED, COLOR_BLACK)
+      # Define color pair 1 as green text on black background.
+      init_pair(1, COLOR_GREEN, COLOR_BLACK)
 
   def draw(self, _stdscr: window, _path: str) -> None:
     """ Draws the editor. """
@@ -108,20 +124,18 @@ class Editor:
     """ Help menu. """
 
     height, width = _stdscr.getmaxyx()
-    win_height, win_width = 10, 54
+    win_height, win_width = len(self.help_message) + 2, 54
     start_y = (height - win_height) // 2
     start_x = (width - win_width) // 2
 
     help_win = _stdscr.subwin(win_height, win_width, start_y, start_x)
     help_win.clear()
     help_win.border()
-    help_win.addstr(1, 1, "CLX Help")
-    help_win.addstr(3, 1, "q: Quit")
-    help_win.addstr(4, 1, "e: Edit byte")
-    help_win.addstr(5, 1, "w: Save")
-    help_win.addstr(6, 1, "g: Jump to address")
-    help_win.addstr(7, 1, "a: Add bytes")
-    help_win.addstr(8, 1, "r: Remove selected byte.")
+
+    for i, line in enumerate(self.help_message):
+      if len(line) < 1: continue
+      help_win.addstr(i+1, 1, line)
+
     help_win.refresh()
     _stdscr.getch()  # Wait for user input to close the window.
     _stdscr.clear()
