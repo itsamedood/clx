@@ -69,7 +69,7 @@ class Editor:
     if 0 <= cursor_line < lines_to_display: _stdscr.move(cursor_line + 1, cursor_column)
 
     # Draw the status bar.
-    status = f"Cursor: {self.cursor_pos:08X} | 'h' for help."
+    status = f"Cursor: {self.cursor_pos:08X} | Size: {len(self.content)} bytes | 'h' for help."
     _stdscr.addstr(_stdscr.getmaxyx()[0] - 1, 0, status[:_stdscr.getmaxyx()[1]])
 
     _stdscr.refresh()
@@ -123,7 +123,12 @@ class Editor:
     _stdscr.clear()
 
   def edit(self, _stdscr: window) -> None:  # 'e'.
-    edit_win = _stdscr.subwin(3, 20, 0, 0)
+    height, width = _stdscr.getmaxyx()
+    win_height, win_width = 3, 20
+    start_y = (height - win_height) // 2
+    start_x = (width - win_width) // 2
+
+    edit_win = _stdscr.subwin(win_height, win_width, start_y, start_x)
     edit_win.clear()
     edit_win.border()
     edit_win.addstr(1, 1, "Enter hex: ")
@@ -135,6 +140,7 @@ class Editor:
 
     try: self.content[self.cursor_pos] = int(new_value, 16)
     except ValueError: ...
+    _stdscr.clear()
 
   def save(self, _stdscr: window) -> None:  # 'w'.
     try:
@@ -184,11 +190,13 @@ class Editor:
       self.content.extend(bytearray(num_bytes))
     except ValueError:
       self.error(_stdscr, "Invalid number!")
+    _stdscr.clear()
 
   def remove_byte(self, _stdscr: window) -> None:
     if len(self.content) > 0:
       del self.content[self.cursor_pos]
       self.cursor_pos = max(0, self.cursor_pos - 1)
+    _stdscr.clear()
 
   def main(self, _stdscr: window, _path: str) -> None:
     curs_set(1)  # Show cursor.
