@@ -117,6 +117,7 @@ class Editor:
     help_win.addstr(5, 1, "w: Save")
     help_win.addstr(6, 1, "g: Jump to address")
     help_win.addstr(7, 1, "a: Add bytes")
+    help_win.addstr(8, 1, "r: Remove selected byte.")
     help_win.refresh()
     _stdscr.getch()  # Wait for user input to close the window.
     _stdscr.clear()
@@ -184,6 +185,11 @@ class Editor:
     except ValueError:
       self.error(_stdscr, "Invalid number!")
 
+  def remove_byte(self, _stdscr: window) -> None:
+    if len(self.content) > 0:
+      del self.content[self.cursor_pos]
+      self.cursor_pos = max(0, self.cursor_pos - 1)
+
   def main(self, _stdscr: window, _path: str) -> None:
     curs_set(1)  # Show cursor.
     _stdscr.keypad(True)
@@ -199,6 +205,7 @@ class Editor:
       if key == ord("w"): self.save(_stdscr)
       if key == ord("g"): self.jump_to_address(_stdscr)
       if key == ord("a"): self.add_bytes(_stdscr)
+      if key == ord("r"): self.remove_byte(_stdscr)
       if key == KEY_DOWN: self.cursor_pos += self.bytes_per_line
       if key == KEY_UP: self.cursor_pos -= self.bytes_per_line
       if key == KEY_LEFT: self.cursor_pos -= 1
